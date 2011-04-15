@@ -139,14 +139,6 @@ function(F1=0, F2=0, F3=0, F4=0, F5=0, F6=0, F7=0, F8=0, plot.param="Ktrans", ra
             }
         }
 
-        ## frame()
-        ## for(i in 1:length(files)){
-        ##  if(files[i]!=0){
-        ##    plot(maptimes.list[[i]], aif.list[[i]], xlab="min", ylab="contrast agent", main="Vascular Input Function", cex=3, cex.axis=1.5, type="n")
-        ##    lines(maptimes.list[[i]], aif.list[[i]])
-        ##  }
-        ## }
-
         image(array(1:2, dim=c(1,2)), col=palette(colorRampPalette(c("red","blue"))(2)), zlim=c(0,2), xaxt="n", yaxt="n", xlab=modeltype1, main=modeltype2, cex.lab=1.5, cex.main=1.5, cex.axis=1.5)
         image(array(1:2, dim=c(1,2)), col=palette(colorRampPalette(c("red","blue"))(2)), zlim=c(0,2), xaxt="n", yaxt="n", xlab=modeltype1, main=modeltype2, cex.lab=1.5, cex.main=1.5, cex.axis=1.5, add=TRUE)
 

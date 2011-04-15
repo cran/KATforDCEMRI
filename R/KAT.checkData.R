@@ -106,4 +106,3 @@ KAT.checkData <-
         if(write.data.to.file==FALSE)
             return(dcemri.data)
     }
-

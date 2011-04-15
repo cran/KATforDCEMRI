@@ -486,12 +486,6 @@ Gregory Z. Ferl
 ##
 ## ANALYZE DATA FROM A SINGLE DCE-MRI SCAN
 ##
-## Install the R package to a local directory - only needs to be done once
-## R> system("R CMD INSTALL -l my_local_library KATforDCEMRI_739.tar.gz")
-##
-## Load the KATforDCEMRI package
-## R> library(KATforDCEMRI, lib.loc="my_local_library")
-##
 ## Load MATLAB files into R
 ## R> aif <- readMat("mydatafile-AIF.mat")$aif
 ## R> ct <- readMat("mydatafile-CT.mat")$ct

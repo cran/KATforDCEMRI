@@ -88,7 +88,7 @@ runme <- function(){
     cvKtrans_Ts2B <- as.numeric(format(100*sd(as.vector(dcemri.data$mapKtransT), na.rm=TRUE)/Ktrans_Ts2B, digits=3))
     cvkep_Ts2B <- as.numeric(format(100*sd(as.vector(dcemri.data$mapkepT), na.rm=TRUE)/kep_s2B, digits=3))
 
-    pdf(file="KAT_demo_out.pdf", height=11, width=8.5)
+    pdf(file="KAT_demo-page1.pdf", height=11, width=8.5)
 
     plot(0:35, type = "n", xaxt="n", yaxt="n", bty="n", xlab = "", ylab = "")
     text(5, 35, paste("KATforDCEMRI version ", dcemri.data$KATversion, " BENCHMARK TEST", sep=""), pos=4, font=2, col="red")
@@ -115,7 +115,7 @@ runme <- function(){
     dev.off()
 
 
-    pdf(file="KAT_demo_out_Tofts.pdf", height=11, width=8.5)
+    pdf(file="KAT_demo-page2.pdf", height=11, width=8.5)
 
     plot(0:35, type = "n", xaxt="n", yaxt="n", bty="n", xlab = "", ylab = "")
 
@@ -135,12 +135,6 @@ runme <- function(){
     text(5, 8, paste("Slice 4: kep =", kep_Ts2B, "1/min (", cvkep_Ts2B, "%) [true value = 1.1 1/min]", sep=""), pos=4)
     text(5, 7, "Slice 4: vb = 0 (Fixed) [true value = 0.05]", pos=4)
     dev.off()
-
-
-    system("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=KAT_benchmark_test.pdf KAT_demo_out.pdf KAT_demo_out_Tofts.pdf KAT-multislice.pdf")
-    system("rm KAT-multislice.pdf")
-    system("rm KAT_demo_out.pdf")
-    system("rm KAT_demo_out_Tofts.pdf")
 }
 
 runme()

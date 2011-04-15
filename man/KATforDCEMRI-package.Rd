@@ -33,7 +33,7 @@ Package for kinetic analysis of longitudinal voxel-wise Dynamic Contrast Enhance
 \tabular{ll}{
 Package: \tab KATforDCEMRI\cr
 Type: \tab Package\cr
-Version: \tab 0.739\cr
+Version: \tab 0.740\cr
 Date: \tab 2014-02-04\cr
 License: \tab LGPL-3\cr
 LazyLoad: \tab yes\cr
