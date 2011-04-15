@@ -1,0 +1,6 @@
+export("KAT")
+export("KAT.checkData")
+export("KAT.plot")
+importFrom("locfit", locfit, locfit.robust)
+importFrom("R.matlab", readMat, writeMat)
+importFrom("matlab", rot90)

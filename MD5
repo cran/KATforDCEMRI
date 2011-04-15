@@ -1,0 +1,14 @@
+3e27757689ff9fcaabdd0f334caf23ee *DESCRIPTION
+cfeaa79020a02127c97fe1f2344c9fa2 *NAMESPACE
+1f3d442258f174fa521eee76b166729e *R/KAT.R
+c5f648e15b6c774979825e3e118f7e17 *R/KAT.checkData.R
+f8e794b0ed07a55ddd43542a25e354a1 *R/KAT.plot.R
+dbf4b0ea87d6b73b14ce422cfddff8f6 *data/datalist
+7c61dd33c0b53d5a4a80271dee3b26e8 *data/dcemri.data.RData
+ddde43ff50fce392e197d5c1a00418dc *demo/00Index
+3d5a250a2a6c9f3d01cefa2624faeb53 *demo/KAT.R
+f7b1887a152dde87eaeb8f4bf951d8f4 *man/KAT.Rd
+9d72f352b668ee74eefb3c8925dd0efa *man/KAT.checkData.Rd
+4ca78bca895f76c4af067c5a75a5caa4 *man/KAT.plot.Rd
+0aca1867f348702a76a7250fb10477fe *man/KATforDCEMRI-package.Rd
+d987adcc4b9400493f5de1e26e0a3cce *man/dcemri.data.Rd
