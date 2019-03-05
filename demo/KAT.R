@@ -1,5 +1,5 @@
 ##    KATforDCEMRI: a Kinetic Analysis Tool for DCE-MRI
-##    Copyright 2014 Genentech, Inc.
+##    Copyright 2018 Genentech, Inc.
 ##
 ##    For questions or comments, please contact
 ##    Gregory Z. Ferl, Ph.D.
@@ -12,14 +12,15 @@
 runme <- function(){
     data(dcemri.data, package="KATforDCEMRI")
 
-    dir.create("KATforDCEMRI_benchmark_test")
-    setwd("KATforDCEMRI_benchmark_test")
+    ## dir.create("KATforDCEMRI_benchmark_test")
+    ## setwd("KATforDCEMRI_benchmark_test")
 
     attach(dcemri.data)
 
     ## SHRINK THE ROI MASK
     maskROI[,,] <- 0
-    maskROI[32:42,32:42,] <- 1
+    #maskROI[32:42,32:42,] <- 1
+    maskROI[34:36,34:36,] <- 1
 
     runtime1 <- system.time(KAT.checkData(file.name="KAT", vector.times=vectorTimes, map.CC=mapCC, mask.ROI=maskROI, vector.AIF=vectorAIF))
     runtime2 <- system.time(KAT(file = "KAT.RData", results_file="KAT_benchmark_test-full", range.map=1.05, cutoff.map=0.95, AIF.shift="NONE", tlag.Tofts.on=FALSE, export.matlab=FALSE))

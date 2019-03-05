@@ -1,5 +1,5 @@
 %%    KATforDCEMRI: a Kinetic Analysis Tool for DCE-MRI
-%%    Copyright 2014 Genentech, Inc.
+%%    Copyright 2019 Genentech, Inc.
 %%
 %%    For questions or comments, please contact
 %%    Gregory Z. Ferl, Ph.D.
@@ -23,7 +23,8 @@ results_file="my_results", method.optimization = "L-BFGS-B",
 show.rt.fits = FALSE, param.for.avdt = "Ktrans", range.map = 1.5,
 cutoff.map = 0.85, export.matlab = TRUE, export.RData = TRUE,
 verbose=FALSE, show.errors = FALSE, try.silent=TRUE, fracGTzero = 0.75,
-AIF.shift = "", Force.AIF.peak = FALSE, tlag.Tofts.on = FALSE, ...)
+AIF.shift = "", Force.AIF.peak = FALSE, tlag.Tofts.on = FALSE,
+est.per.voxel.tlag = FALSE, ...)
 }
 \arguments{
   \item{file}{
@@ -89,11 +90,23 @@ during the parameter estimation process? (default=\code{FALSE}).
 }
 \item{tlag.Tofts.on}{
   Do you want to estimate \eqn{t_{lag}}{tlag} for the Tofts model
-  (\code{tlag.Tofts.on = TRUE})?. If \code{tlag.Tofts.on = FALSE}, \eqn{t_{lag}}{tlag} for the Tofts
+  (\code{tlag.Tofts.on = TRUE})? If \code{tlag.Tofts.on = FALSE}, \eqn{t_{lag}}{tlag} for the Tofts
  model will be set equal to the \eqn{t_{lag}}{tlag} value estimated for
- the extended Tofts model. Use with caution, since there may be
+ the extended Tofts model. If \code{tlag.Tofts.on = TRUE} a single
+ \eqn{t_{lag}}{tlag} value will be estimated based on the median
+ contrast agent profile over the slice of interest. Use with caution, since there may be
  parameter identifiability issues associated with estimated
  \eqn{t_{lag}}{tlag} when fitting the Tofts model to data. (default=\code{FALSE}).
+}
+\item{est.per.voxel.tlag}{
+  Do you want to estimate \eqn{t_{lag}}{tlag} on a per-voxel basis for
+  the extended Tofts model
+  (\code{est.per.voxel.tlag = TRUE})? Use with caution, since there may be
+ parameter identifiability issues associated with estimated
+ \eqn{t_{lag}}{tlag} on a per-voxel basis. Note that this argument does
+ not impact per-voxel tlag values within the Tofts model, which will
+ always use \eqn{t_{lag}}{tlag} values based on median contrast agent
+ profiles. cf. \code{tlag.Tofts.on}.
 }
 \item{...}{
 Pass arguments to functions within \code{KAT}.
@@ -216,7 +229,7 @@ nD)[(y_i-s(p_hat,ti))^2].}
   (\eqn{cov}{cov}) and \%CVs for model parameters estimated
   using the \eqn{\mbox{OF}_{K\!AT}}{OF_KAT}, i.e., \eqn{R\!S\!S}{RSS}, objective function may be \strong{approximated} as}
 
-\deqn{cov(\hat{p})=\frac{n_D \cdot \mbox{OF}_{K\!AT}}{n_D-n_P}\mathbf{H}^{-1}(\hat{p})}{cov(p_hat)=(nD*OF_KAT)/(nD-nP)*H^-1(p_hat)}
+\deqn{cov(\hat{p})=\frac{n_P \cdot \mbox{OF}_{K\!AT}}{n_D-n_P}\mathbf{H}^{-1}(\hat{p})}{cov(p_hat)=(nP*OF_KAT)/(nD-nP)*H^-1(p_hat)}
 
 \emph{and}
 
@@ -433,45 +446,31 @@ of interest, where a ``1'' indicates enhancement.
 \references{
   \emph{Model equations}
 
-[1] Tofts P, Kermode A (1991). Measurement of the blood-brain barrier
-permeability and leakage space using dynamic MR imaging. 1. Fundamental
-concepts. Magn Reson Med, 17(2), 357-67. \url{http://www.ncbi.nlm.nih.gov/pubmed/2062210}
+[1] Tofts P, Kermode A (1991) \doi{10.1002/mrm.1910170208}
 
-[2] Ferl GZ, Port RE (2012). Quantification of Antiangiogenic and
-Antivascular Drug Activity by Kinetic Analysis
-of DCE-MRI Data. Clin Pharmacol Ther, 92(1), 118-124. \url{http://www.ncbi.nlm.nih.gov/pubmed/22588603}
+[2] Tofts et al. (1999) \url{https://www.ncbi.nlm.nih.gov/pubmed/10508281}
+
+[3] Ferl GZ, Port RE (2012) \doi{10.1038/clpt.2012.63}
 
 \emph{Objective Function}
 
-[3] Barrett PHR, Bell BM, Cobelli C, Golde H, Schumitzky A,
-Vicini P, and Foster DM (1998). SAAM II: Simulation, Analysis, and Modeling Software for Tracer
-and Pharmacokinetic Studies. Metabolism, 47(4), 484-492. \url{http://www.ncbi.nlm.nih.gov/pubmed/9550550}
+[4] Barrett PHR, Bell BM, Cobelli C, Golde H, Schumitzky A,
+Vicini P, and Foster DM (1998) \doi{10.1016/S0026-0495(98)90064-6}
 
 \emph{Model discrimination}
 
-[4] Glatting G, Kletting P, Reske SN (2007). Choosing the optimal fit function: Comparison of the Akaike information
-criterion and the F-test. Med Phys, 34(11), 4285-4292. \url{http://www.ncbi.nlm.nih.gov/pubmed/18072493}
+[5] Glatting G, Kletting P, Reske SN (2007).  \doi{10.1118/1.2794176}
 
 \emph{Coefficients of Variation (CVs) for estimated parameters}
 
-[5] Venables WN, Smith DM, R Core Team (2012). An Introduction to R [Notes
-on R: A Programming Environment for Data Analysis and Graphics Version
-2.15.2 (2012-10-26)]. Section 11.7: Nonlinear least squares and maximum likelihood
-models. \url{http://cran.r-project.org/doc/manuals/R-intro.pdf}
-
-[6] Unpublished notes by Elliot M. Landow, UCLA Department of
-Biomathematics.
+[6] Venables WN, Smith DM, R Core Team (2012) \url{https://CRAN.R-project.org/doc/manuals/R-intro.pdf}
 
 \emph{R package for numerical deconvolution}
 
 [7] Ferl GZ, Xu L, Friesenhahn M, Bernstein LJ, Barboriak DP, Port RE
-(2010). An automated method for nonparametric kinetic analysis of
-clinical DCE-MRI data: application to glioblastoma treated with
-bevacizumab. Magn Reson Med, 63(5), 1366-1375. \url{http://www.ncbi.nlm.nih.gov/pubmed/20432307}
+(2010) \doi{DOI:10.1002/mrm.22335}
 
-[8] Ferl GZ (2011). DATforDCEMRI: An R Package for Deconvolution Analysis and Visualization
-of DCE-MRI Data. J Stat Softw, 44(3),
-1-18. \url{http://www.jstatsoft.org/v44/i03} and \url{http://cran.r-project.org/package=DATforDCEMRI}
+[8] Ferl GZ (2011) \doi{10.18637/jss.v044.i03}
 
 }
 \author{
@@ -481,8 +480,16 @@ Gregory Z. Ferl
 \code{\link{KAT.checkData}}, \code{\link{KAT.plot}}, \code{\link{dcemri.data}}
 }
 \examples{
-## RUN THE BENCHMARK TEST
-   demo(KAT, ask=FALSE)
+## Create temporary directory for example code output files
+temp_dir <- tempdir(check=FALSE)
+##
+current_dir <- getwd()
+setwd(temp_dir)
+##
+## Run example code
+demo(KAT, ask=FALSE)
+##
+setwd(current_dir)
 ##
 ## ANALYZE DATA FROM A SINGLE DCE-MRI SCAN
 ##

@@ -1,5 +1,5 @@
 ##    KATforDCEMRI: a Kinetic Analysis Tool for DCE-MRI
-##    Copyright 2014 Genentech, Inc.
+##    Copyright 2018 Genentech, Inc.
 ##
 ##    For questions or comments, please contact
 ##    Gregory Z. Ferl, Ph.D.
@@ -10,7 +10,7 @@
 ##    E-mail: ferl.gregory@gene.com
 
 KAT.checkData <-
-    function(file.name, vector.times, map.CC, mask.ROI, vector.AIF, write.data.to.file=TRUE){
+    function(file.name, vector.times, map.CC, mask.ROI, vector.AIF, map.tlag=NULL, write.data.to.file=TRUE){
 
         st <- 1
         sp <- dim(mask.ROI)[3]
@@ -19,6 +19,10 @@ KAT.checkData <-
         cc <- map.CC[,,st:sp,]
         roi <- mask.ROI[,,st:sp]
         aif <- as.vector(vector.AIF)
+
+
+        if(length(map.tlag)>0)
+            tlag <- map.tlag[,,st:sp]
 
         ## DETRMINE IF UNITS OF TIME VECTOR ARE IN MINUTES OR SECONDS
         if(max(time)<100)
@@ -42,6 +46,11 @@ KAT.checkData <-
         if(length(dim(cc)) != (length(dim(roi))+1))
             stop("map.CC array must have n+1 dimensions when mask.ROI array has n dimensions (one of these arrays may have data corresponding to a single slice while the other has multiple slices)")
 
+        if(length(map.tlag)>0){
+            if(length(dim(cc)) != (length(dim(tlag))+1))
+                stop("map.CC array must have n+1 dimensions when map.tlag array has n dimensions (one of these arrays may have data corresponding to a single slice while the other has multiple slices)")
+        }
+
         if(length(dim(cc))==4){
             cat("dimensions of map.CC array are", length(cc[,1,1,1]), "x", length(cc[1,,1,1]), "x", length(cc[1,1,,1]), "slices x", length(cc[1,1,1,]), "time points", "\n")
 
@@ -61,6 +70,20 @@ KAT.checkData <-
 
             if(length(roi[1,1,]) != length(cc[1,1,,1]))
                 stop("number of slices within mask.ROI and map.CC arrays must be equal")
+
+
+            if(length(map.tlag)>0){
+                cat("dimensions of map.tlag array are", length(tlag[,1,1]), "x", length(tlag[1,,1]), "x", length(tlag[1,1,]), "slices", "\n")
+
+                if(length(tlag[,1,1]) != length(cc[,1,1,1]))
+                    stop("nx dimension of the map.tlag and map.CC arrays must be equal")
+
+                if(length(tlag[1,,1]) != length(cc[1,,1,1]))
+                    stop("ny dimension of the map.tlag and map.CC arrays must be equal")
+
+                if(length(tlag[1,1,]) != length(cc[1,1,,1]))
+                    stop("number of slices within map.tlag and map.CC arrays must be equal")
+            }
         }
 
         if(length(dim(cc))==3){
@@ -79,6 +102,18 @@ KAT.checkData <-
 
             if(length(roi[1,]) != length(cc[1,,1]))
                 stop("ny dimension of the mask.ROI and map.CC arrays must be equal")
+
+
+            if(length(map.tlag)>0){
+                cat("dimensions of map.tlag array are", length(tlag[,1]), "x", length(tlag[1,]), "\n")
+
+                if(length(tlag[,1]) != length(cc[,1,1]))
+                    stop("nx dimension of the map.tlag and map.CC arrays must be equal")
+
+                if(length(tlag[1,]) != length(cc[1,,1]))
+                    stop("ny dimension of the map.tlag and map.CC arrays must be equal")
+            }
+
         }
 
         cat("\n")
@@ -91,8 +126,16 @@ KAT.checkData <-
         ##file.name <- paste(file.name, "_s", st, "-s", sp, ".RData", sep="")
         file.name <- paste(file.name, ".RData", sep="")
 
-        dcemri.data <- list(time, cc, roi, aif, write.data.to.file)
-        names(dcemri.data) <- c("vectorTimes", "mapCC", "maskROI", "vectorAIF", "write.data.to.file")
+        if(length(map.tlag)==0){
+            dcemri.data <- list(time, cc, roi, aif, write.data.to.file)
+            names(dcemri.data) <- c("vectorTimes", "mapCC", "maskROI", "vectorAIF", "write.data.to.file")
+        }
+
+        if(length(map.tlag)>0){
+            dcemri.data <- list(time, cc, roi, aif, tlag, write.data.to.file)
+            names(dcemri.data) <- c("vectorTimes", "mapCC", "maskROI", "vectorAIF", "maptlag", "write.data.to.file")
+        }
+
 
         if(write.data.to.file==TRUE){
             save(dcemri.data, file=file.name)

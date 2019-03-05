@@ -1,5 +1,5 @@
 %%    KATforDCEMRI: a Kinetic Analysis Tool for DCE-MRI
-%%    Copyright 2014 Genentech, Inc.
+%%    Copyright 2019 Genentech, Inc.
 %%
 %%    For questions or comments, please contact
 %%    Gregory Z. Ferl, Ph.D.
@@ -49,5 +49,8 @@ and 2) or sd=0.75 (slices 3 and 4).
 }
 \seealso{
 \code{\link{KAT}}, \code{\link{KAT.checkData}}, \code{\link{KAT.plot}}
+}
+\examples{
+data(dcemri.data, package="KATforDCEMRI")
 }
 \keyword{datasets}

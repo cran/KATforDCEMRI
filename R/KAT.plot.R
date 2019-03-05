@@ -1,5 +1,5 @@
 ##    KATforDCEMRI: a Kinetic Analysis Tool for DCE-MRI
-##    Copyright 2014 Genentech, Inc.
+##    Copyright 2018 Genentech, Inc.
 ##
 ##    For questions or comments, please contact
 ##    Gregory Z. Ferl, Ph.D.

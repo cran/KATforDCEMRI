@@ -1,5 +1,5 @@
 %%    KATforDCEMRI: a Kinetic Analysis Tool for DCE-MRI
-%%    Copyright 2014 Genentech, Inc.
+%%    Copyright 2019 Genentech, Inc.
 %%
 %%    For questions or comments, please contact
 %%    Gregory Z. Ferl, Ph.D.
@@ -77,6 +77,23 @@ slice 1----slice 2----slice 3----slice 4----slice 5----slice 6----slice 7----sli
 }
 \author{
 Gregory Z. Ferl
+}
+\examples{
+## Create temporary directory for example code output files
+temp_dir <- tempdir(check=FALSE)
+##
+current_dir <- getwd()
+setwd(temp_dir)
+##
+## Run example code
+demo(KAT, ask=FALSE)
+file1="KAT_benchmark_test-full_slice1.RData"
+file2="KAT_benchmark_test-full_slice2.RData"
+file3="KAT_benchmark_test-full_slice3.RData"
+file4="KAT_benchmark_test-full_slice4.RData"
+KAT.plot(F1=file1, F2=file2, F3=file3, F4=file4, export.matlab=FALSE)
+##
+setwd(current_dir)
 }
 \keyword{ kinetic }
 \keyword{ DCEMRI }

@@ -1,5 +1,5 @@
 ##    KATforDCEMRI: a Kinetic Analysis Tool for DCE-MRI
-##    Copyright 2014 Genentech, Inc.
+##    Copyright 2018 Genentech, Inc.
 ##
 ##    For questions or comments, please contact
 ##    Gregory Z. Ferl, Ph.D.
@@ -9,7 +9,7 @@
 ##    South San Francisco, CA, United States of America
 ##    E-mail: ferl.gregory@gene.com
 
-KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="my_results", method.optimization="L-BFGS-B", show.rt.fits=FALSE, param.for.avdt="Ktrans", range.map=1.5, cutoff.map=0.85, export.matlab=TRUE, export.RData=TRUE, verbose=FALSE, show.errors = FALSE, try.silent=TRUE, fracGTzero=0.75, AIF.shift="", Force.AIF.peak=FALSE, tlag.Tofts.on=FALSE, ...){
+KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="my_results", method.optimization="L-BFGS-B", show.rt.fits=FALSE, param.for.avdt="Ktrans", range.map=1.5, cutoff.map=0.85, export.matlab=TRUE, export.RData=TRUE, verbose=FALSE, show.errors = FALSE, try.silent=TRUE, fracGTzero=0.75, AIF.shift="", Force.AIF.peak=FALSE, tlag.Tofts.on=FALSE, est.per.voxel.tlag=FALSE, ...){
 
     ## SPECIFY LOWER BOUND FOR PARAMETER ESTIMATES
     lo <- 0
@@ -28,7 +28,7 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
 
     file_short <- file
 
-    KAT.version <- "0.740"
+    KAT.version <- "1.0"
     ptm_total <- proc.time()[3]
 
     modeltype1 <- "xTofts"
@@ -92,7 +92,7 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
     }
 
     ## ##################################################################################
-    ## #####SPECIFY THE ONE COMPARTMENT EXTENDED TOFTS MODEL WITH ESTIMATED TIME DELAY###
+    ## #####-SPECIFY THE ONE COMPARTMENT TOFTS MODEL WITH ESTIMATED TIME DELAY-##########
     ## ##################################################################################
     roi.modelT <- function(p, t, dt, cp, zing=0) {
         if(zing==0){
@@ -101,17 +101,18 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
             kep <- p[2]
             ## GF Add a time shift parameter
             ## GF The fix.tlag argument allows tlag to be estimated based on median roi values and fixed to that estimated value for subsequest per-voxel fits
+
             if(tlag.Tofts.on == TRUE){
                 if(fix.tlag != TRUE & AIF.shift != "NONE")
                     time_shift <- p[3]
 
                 if(fix.tlag == TRUE & AIF.shift != "NONE")
                     time_shift <- param.est.whole.roi.Tofts$tlag
-
             }
 
-            if(tlag.Tofts.on == FALSE)
+            if(tlag.Tofts.on == FALSE){
                 time_shift <- param.est.whole.roi.xTofts$tlag
+            }
 
             ## GP ODE: ct'(t) = cp(t)*ktrans - ct(t)*kep ; c(0) = 0
             ## GP closed form solution: ct(t) = exp(-kep*t) * int(ktrans*exp(kep*tau)*cp(tau), tau=1..t)
@@ -145,11 +146,19 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
             vb <- p[3]
             ## GF Add a time shift parameter
             ## GF The fix.tlag argument allows tlag to be estimated based on median roi values and fixed to that estimated value for subsequest per-voxel fits
+
             if(fix.tlag != TRUE & AIF.shift != "NONE")
                 time_shift <- p[4]
 
-            if(fix.tlag == TRUE & AIF.shift != "NONE")
-                time_shift <- param.est.whole.roi.xTofts$tlag
+            if(est.per.voxel.tlag==FALSE){
+                if(fix.tlag == TRUE & AIF.shift != "NONE")
+                    time_shift <- param.est.whole.roi.xTofts$tlag
+            }
+
+            if(est.per.voxel.tlag==TRUE){
+                if(fix.tlag == TRUE & AIF.shift != "NONE")
+                    time_shift <- p[4]
+            }
 
 
             ## GP ODE: ct'(t) = cp(t)*ktrans - ct(t)*kep ; c(0) = 0
@@ -161,6 +170,8 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
             if(AIF.shift=="ARTERY" | AIF.shift=="VEIN")
                 ## GF Shift the AIF
                 cp <- aif.shift.func(t, cp, time_shift)
+
+
 
             f <- Ktrans*exp(kep*t)*cp
             int <- c(0, cumsum(dt*(tail(f, -1)+head(f, -1)))/2)
@@ -313,6 +324,7 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
     map.kepxT <- NULL
     map.vexT <- NULL
     map.vbxT <- NULL
+    map.tlagxT <- NULL
     map.fitfailuresxT <- NULL
     map.KtransT <- NULL
     map.kepT <- NULL
@@ -513,12 +525,12 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
 
                 ## INITIAL PARAM VALUES AND BOUNDS FOR TOFTS MODEL
                 if(tlag.Tofts.on == TRUE & AIF.shift=="VEIN"){
-                    p0.T.median <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, 0.12)
+                    p0.T.median <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, 0.05)
                     lower.wholeT <- c(lo, lo, 0)
                     upper.wholeT <- c(Inf,Inf,Inf)
                 }
                 if(tlag.Tofts.on == TRUE & AIF.shift=="ARTERY"){
-                    p0.T.median <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, 0.12)
+                    p0.T.median <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, 0.05)
                     lower.wholeT <- c(lo, lo, 0)
                     upper.wholeT <- c(Inf,Inf,Inf)
                 }
@@ -531,12 +543,12 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
 
                 ## INITIAL PARAM VALUES AND BOUNDS FOR XTOFTS MODEL
                 if(AIF.shift=="VEIN"){
-                    p0.xT.median <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, 0.05, 0.12)
+                    p0.xT.median <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, 0.05, 0.05)
                     lower.wholexT <- c(lo, lo, lo, 0)
                     upper.wholexT <- c(Inf,Inf,Inf,Inf)
                 }
                 if(AIF.shift=="ARTERY"){
-                    p0.xT.median <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, 0.05, 0.12)
+                    p0.xT.median <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, 0.05, 0.05)
                     lower.wholexT <- c(lo, lo, lo, 0)
                     upper.wholexT <- c(Inf,Inf,Inf,Inf)
                 }
@@ -637,10 +649,21 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                 ## PERFORM TRUNCATION CORRECTION ON INITIAL PARAMETER VALUES ESTIMATED BY DECONVOLUTION
                 ## AND USE AS INITIAL PARAMS FOR PER-VOXEL FITTING (BEGIN)
                 IRF.out <- calchFUNC(vector.times=map.times, AIF=aif, map_cc_slice=cc.median, vp.nom=param.est.whole.roi.xTofts$vb, kep.nom=param.est.whole.roi.xTofts$kep)
+
                 p0.T <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh)
-                p0.xT <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, param.est.whole.roi.xTofts$vb)
                 names(p0.T) <- c("Ktrans", "kep")
-                names(p0.xT) <- c("Ktrans", "kep", "vb")
+
+                if(est.per.voxel.tlag==FALSE){
+                    p0.xT <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, param.est.whole.roi.xTofts$vb)
+                    names(p0.xT) <- c("Ktrans", "kep", "vb")
+                }
+
+                if(est.per.voxel.tlag==TRUE){
+                    p0.xT <- c(IRF.out$AUChMRTh, IRF.out$AUChMRTh/IRF.out$AUCh, param.est.whole.roi.xTofts$vb, 0.05)
+                    names(p0.xT) <- c("Ktrans", "kep", "vb", "tlag")
+                }
+
+
                 ## PERFORM TRUNCATION CORRECTION ON INITIAL PARAMETER VALUES ESTIMATED BY DECONVOLUTION
                 ## AND USE AS INITIAL PARAMS FOR PER-VOXEL FITTING (END)
 
@@ -760,6 +783,7 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                     range.map <- args$rangemap
                     cutoff.map <- args$cutoffmap
                     lo <- args$lo
+                    est.per.voxel.tlag <- args$estpervoxeltlag
                     p0.xT <- mat_data$p0xT
                     p0.T <- mat_data$p0T
                     AIF.shift <- args$AIFshift
@@ -772,12 +796,14 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                     aif <- mat_data$aif
                     aif.shifted <- mat_data$aifshifted
                     map.KtransxT <- mat_data$mapKtransxT
+                    map.tlagxT <- mat_data$maptlagxT
                     map.kepxT <- mat_data$mapkepxT
                     map.vexT <- mat_data$mapvexT
                     map.vbxT <- mat_data$mapvbxT
                     map.KtransT.cv <- mat_data$mapKtransTcv
                     map.kepT.cv <- mat_data$mapkepTcv
                     map.KtransxT.cv <- mat_data$mapKtransxTcv
+                    map.tlagxT.cv <- mat_data$maptlagxTcv
                     map.kepxT.cv <- mat_data$mapkepxTcv
                     map.vbxT.cv <- mat_data$mapvbxTcv
                     map.fitfailuresxT <- mat_data$mapfitfailuresxT
@@ -820,6 +846,7 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                     p0.xT <- dcemri.data$p0xT
                     p0.T <- dcemri.data$p0T
                     AIF.shift <- args$AIFshift
+                    est.per.voxel.tlag <- args$estpervoxeltlag
                     nx <- dcemri.data$nx
                     ny <- dcemri.data$ny
                     nt <- dcemri.data$nt
@@ -832,9 +859,11 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                     map.KtransT.cv <- dcemri.data$mapKtransTcv
                     map.kepT.cv <- dcemri.data$mapkepTcv
                     map.KtransxT.cv <- dcemri.data$mapKtransxTcv
+                    map.tlagxT.cv <- dcemri.data$maptlagxTcv
                     map.kepxT.cv <- dcemri.data$mapkepxTcv
                     map.vbxT.cv <- dcemri.data$mapvbxTcv
                     map.KtransxT <- dcemri.data$mapKtransxT
+                    map.tlagxT <- dcemri.data$maptlagxT
                     map.kepxT <- dcemri.data$mapkepxT
                     map.vexT <- dcemri.data$mapvexT
                     map.vbxT <- dcemri.data$mapvbxT
@@ -880,10 +909,12 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                 map.kepxT <- matrix(NA, nrow=nx, ncol=ny)
                 map.vexT <- matrix(NA, nrow=nx, ncol=ny)
                 map.vbxT <- matrix(NA, nrow=nx, ncol=ny)
+                map.tlagxT <- matrix(NA, nrow=nx, ncol=ny)
 
                 map.KtransxT.cv <- matrix(NA, nrow=nx, ncol=ny)
                 map.kepxT.cv <- matrix(NA, nrow=nx, ncol=ny)
                 map.vbxT.cv <- matrix(NA, nrow=nx, ncol=ny)
+                map.tlagxT.cv <- matrix(NA, nrow=nx, ncol=ny)
 
                 map.fitfailuresxT <- matrix(NA, nrow=nx, ncol=ny)
                 map.OptimValuexT <- matrix(NA, nrow=nx, ncol=ny)
@@ -975,6 +1006,8 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                                             map.KtransxT.cv[x,y] <- cv.roi.voxel[1]
                                             map.kepxT.cv[x,y] <- cv.roi.voxel[2]
                                             map.vbxT.cv[x,y] <- cv.roi.voxel[3]
+                                            if(est.per.voxel.tlag==TRUE)
+                                                map.tlagxT.cv[x,y] <- cv.roi.voxel[4]
                                         }
                                     }
                                     ## CALCULATE %CVs (end)
@@ -985,6 +1018,8 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                                         map.kepxT[x,y] <- 0.00001
                                     map.vexT[x,y] <- fit_roi$par[1]/map.kepxT[x,y]
                                     map.vbxT[x,y] <- fit_roi$par[3]
+                                    if(est.per.voxel.tlag==TRUE)
+                                        map.tlagxT[x,y] <- fit_roi$par[4]
                                     map.OptimValuexT[x,y] <- fit_roi$value
                                 }
                             }
@@ -1003,6 +1038,8 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                                 map.kepxT[x,y] <- NA
                                 map.vexT[x,y] <- NA
                                 map.vbxT[x,y] <- NA
+                                map.tlagxT[x,y] <- NA
+
                             }
 
                             if(class(fit_roi) != "try-error"){
@@ -1011,6 +1048,7 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                                     map.kepxT[x,y] <- NA
                                     map.vexT[x,y] <- NA
                                     map.vbxT[x,y] <- NA
+                                    map.tlagxT[x,y] <- NA
                                 }
                             }
 
@@ -1236,9 +1274,16 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                 kepxT.median <- median(map.kepxT[map.kepxT>0 & map.fitfailuresxT==0], na.rm=TRUE)
                 vexT.median <- median(map.vexT[map.vexT>0 & map.fitfailuresxT==0], na.rm=TRUE)
                 vbxT.median <- median(map.vbxT[map.vbxT>=0 & map.fitfailuresxT==0], na.rm=TRUE)
+
+                if(est.per.voxel.tlag==TRUE)
+                    tlagxT.median <- median(map.tlagxT[map.tlagxT>=0 & map.fitfailuresxT==0], na.rm=TRUE)
+                if(est.per.voxel.tlag==FALSE)
+                    tlagxT.median <- NA
+
                 fitfailuresxT.total <- length(map.fitfailuresxT[map.fitfailuresxT >= 1]) / length(map.fitfailuresxT[map.fitfailuresxT >= 0]) * 100
-                param.est.medianxT <- list(KtransxT.median, kepxT.median, vexT.median, vbxT.median, fitfailuresxT.total)
-                names(param.est.medianxT) <- c("Ktrans.median", "kep.median", "ve.median", "vb.median", "percent.fitfailures")
+
+                param.est.medianxT <- list(KtransxT.median, kepxT.median, vexT.median, vbxT.median, tlagxT.median, fitfailuresxT.total)
+                names(param.est.medianxT) <- c("Ktrans.median", "kep.median", "ve.median", "vb.median", "tlag.median", "percent.fitfailures")
 
 
                 KtransT.median <- median(map.KtransT[map.KtransT>0 & map.fitfailuresT==0], na.rm=TRUE)
@@ -1311,6 +1356,8 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                 MAP <- map.vexT
             if(param.for.avdt == "vb")
                 MAP <- map.vbxT
+            if(param.for.avdt == "tlag")
+                MAP <- map.tlagxT
 
             ## ##ZOOM IN ON TUMOR ROI#####
             x_min <- 0
@@ -1368,6 +1415,8 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                     MAP <- map.vexT
                 if(param.for.avdt == "vb")
                     MAP <- map.vbxT
+                if(param.for.avdt == "tlag")
+                    MAP <- map.tlagxT
 
 
                 if(file.format=="matlab"){
@@ -1407,6 +1456,7 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
 
                 ## ##CALCULATE RANGE OF COLOR BAR (LEGEND)#####
                 MAP_for_plot <- MAP
+
 
                 ## ##REPLACE ANY NEGATIVE NUMBERS WITH ZEROS######
                 MAP_for_plot[MAP_for_plot<0] <- 0
@@ -1497,8 +1547,12 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                         legend_matrix[xx,yy] <- 1
 
                         cat("Voxel Number/Coordinates: n=", legend_count, ", x=", xx, ", y=", yy, "\n", sep="")
-                        cat("Parameter estimates (xTofts): Ktrans=", format(map.KtransxT[xx,yy],digits=3), ", ve=", format(map.KtransxT[xx,yy]/map.kepxT[xx,yy], digits=3), ", vb=", format(map.vbxT[xx,yy],digits=3), "\n", sep="")
-                        cat("%CVs of Parameter estimates (xTofts): Ktrans=", format(map.KtransxT.cv[xx,yy],digits=2), ", kep (Ktrans/ve)=", format(map.kepxT.cv[xx,yy], digits=2), ", vb=", format(map.vbxT.cv[xx,yy],digits=2), "\n", sep="")
+
+
+
+
+                        cat("Parameter estimates (xTofts): Ktrans=", format(map.KtransxT[xx,yy],digits=3), ", ve=", format(map.KtransxT[xx,yy]/map.kepxT[xx,yy], digits=3), ", vb=", format(map.vbxT[xx,yy],digits=3), ", tlag=", format(map.tlagxT[xx,yy],digits=3), "\n", sep="")
+                        cat("%CVs of Parameter estimates (xTofts): Ktrans=", format(map.KtransxT.cv[xx,yy],digits=2), ", kep (Ktrans/ve)=", format(map.kepxT.cv[xx,yy], digits=2), ", vb=", format(map.vbxT.cv[xx,yy],digits=2), ", tlag=", format(map.tlagxT.cv[xx,yy],digits=2), "\n", sep="")
                         cat("Parameter estimates (Tofts): Ktrans=", format(map.KtransT[xx,yy],digits=3), ", ve=", format(map.KtransT[xx,yy]/map.kepT[xx,yy], digits=3), "\n", sep="")
                         cat("%CVs of Parameter estimates (Tofts): Ktrans=", format(map.KtransT.cv[xx,yy],digits=2), ", kep (Ktrans/ve)=", format(map.kepT.cv[xx,yy], digits=3), "\n", sep="")
                         cat("---", "\n")
@@ -1597,7 +1651,10 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
 
                     if(value_xTofts != 0){
 
-                        paramsxT <- c(map.KtransxT[xx,yy], map.kepxT[xx,yy], map.vbxT[xx,yy], param.est.whole.roi.xTofts$tlag)
+                        if(est.per.voxel.tlag==TRUE)
+                            paramsxT <- c(map.KtransxT[xx,yy], map.kepxT[xx,yy], map.vbxT[xx,yy], map.tlagxT[xx,yy])
+                        if(est.per.voxel.tlag==FALSE)
+                            paramsxT <- c(map.KtransxT[xx,yy], map.kepxT[xx,yy], map.vbxT[xx,yy], param.est.whole.roi.xTofts$tlag)
                         paramsT <- c(map.KtransT[xx,yy], map.kepT[xx,yy])
 
                         roi.model <- roi.modelxT
@@ -1619,6 +1676,10 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                     text(max(map.times)/4.5, 1.4*max(conc, na.rm=TRUE)*0.93, paste(paste("Ktrans =", format(map.KtransxT[xx,yy], digits=3)),"min^-1"))
                     text(max(map.times)/4.5, 1.4*max(conc, na.rm=TRUE)*0.86, paste("ve =", format(map.vexT[xx,yy], digits=3)))
                     text(max(map.times)/4.5, 1.4*max(conc, na.rm=TRUE)*0.79, paste("vb =", format(map.vbxT[xx,yy], digits=3)))
+                    if(est.per.voxel.tlag==TRUE)
+                        text(max(map.times)/4.5, 1.4*max(conc, na.rm=TRUE)*0.72, paste("tlag =", format(map.tlagxT[xx,yy], digits=3)))
+
+
                     if(newplot2==1){
                         dev.new(width=5.15, height=3, xpos=1500, ypos=864)
                         newplot2 <- 2
@@ -1652,18 +1713,18 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                 ## ##EXPORT RESULTS######
                 ## ######################
                 proc.time.total <- format((proc.time()[3]-ptm_total)/60, digits=2)
-                args <- list(as.character(file), as.character(results_file), as.character(method.optimization), show.rt.fits, as.character(param.for.avdt), range.map, cutoff.map, export.matlab, export.RData, verbose, show.errors, try.silent, fracGTzero, AIF.shift, slice, ID.visit)
+                args <- list(as.character(file), as.character(results_file), as.character(method.optimization), show.rt.fits, as.character(param.for.avdt), range.map, cutoff.map, export.matlab, export.RData, verbose, show.errors, try.silent, fracGTzero, AIF.shift, slice, ID.visit,  est.per.voxel.tlag)
 
-                names(args) <- c("file", "resultsfile", "methodoptimization", "showrtfits", "paramforavdt", "rangemap", "cutoffmap", "exportmatlab", "exportRData", "verbose", "showerrors", "trysilent", "fracGTzero", "AIFshift", "slice", "IDvisit")
+                names(args) <- c("file", "resultsfile", "methodoptimization", "showrtfits", "paramforavdt", "rangemap", "cutoffmap", "exportmatlab", "exportRData", "verbose", "showerrors", "trysilent", "fracGTzero", "AIFshift", "slice", "IDvisit", "estpervoxeltlag")
 
                 roiplotparams <- list(x_min, x_max, y_min, y_max, MAP_ul)
                 names(roiplotparams) <- c("xmin", "xmax", "ymin", "ymax", "MAPul")
 
                 dummy_data <- dcemri.data
 
-                dcemri.data <- list(args, map_cc_slice, map_cc_roi, cc.median, map.times, aif, aif.shifted, mask.roi, map.KtransxT, map.KtransxT.cv, map.kepxT, map.kepxT.cv, map.vbxT, map.vbxT.cv, map.vexT, map.OptimValuexT, map.fitfailuresxT, param.est.medianxT, roi.median.fitted.xTofts, param.est.whole.roi.xTofts, cv.whole.roi.xTofts, map.KtransT, map.KtransT.cv, map.kepT, map.kepT.cv, map.veT, map.OptimValueT, map.fitfailuresT, param.est.medianT, roi.median.fitted.Tofts, param.est.whole.roi.Tofts, proc.time.total, roiplotparams, KAT.version, map.AIC.xT, map.AIC.T, map.AIC.compare, nx, ny, nt, cc_fittedxT, cc_fittedT, p0.T, p0.xT, IRF.results, map.EF)
+                dcemri.data <- list(args, map_cc_slice, map_cc_roi, cc.median, map.times, aif, aif.shifted, mask.roi, map.KtransxT, map.KtransxT.cv, map.tlagxT, map.tlagxT.cv, map.kepxT, map.kepxT.cv, map.vbxT, map.vbxT.cv, map.vexT, map.OptimValuexT, map.fitfailuresxT, param.est.medianxT, roi.median.fitted.xTofts, param.est.whole.roi.xTofts, cv.whole.roi.xTofts, map.KtransT, map.KtransT.cv, map.kepT, map.kepT.cv, map.veT, map.OptimValueT, map.fitfailuresT, param.est.medianT, roi.median.fitted.Tofts, param.est.whole.roi.Tofts, proc.time.total, roiplotparams, KAT.version, map.AIC.xT, map.AIC.T, map.AIC.compare, nx, ny, nt, cc_fittedxT, cc_fittedT, p0.T, p0.xT, IRF.results, map.EF)
 
-                names(dcemri.data) <- c("args", "cc", "ccroi", "ccmedian", "maptimes", "aif", "aifshifted", "maskroi", "mapKtransxT", "mapKtransxTcv", "mapkepxT", "mapkepxTcv", "mapvbxT", "mapvbxTcv", "mapvexT", "mapOptimValuexT", "mapfitfailuresxT", "paramestmedianxT", "roimedianfittedxTofts", "paramestwholeroixTofts", "cvwholeroixTofts", "mapKtransT", "mapKtransTcv", "mapkepT", "mapkepTcv", "mapveT", "mapOptimValueT", "mapfitfailuresT", "paramestmedianT", "roimedianfittedTofts", "paramestwholeroiTofts", "proctimetotal", "roiplotparams", "KATversion", "mapAICxT", "mapAICT", "mapAICcompare", "nx", "ny", "nt", "ccfittedxT", "ccfittedT", "p0T", "p0xT", "IRFresults", "mapEF")
+                names(dcemri.data) <- c("args", "cc", "ccroi", "ccmedian", "maptimes", "aif", "aifshifted", "maskroi", "mapKtransxT", "mapKtransxTcv", "maptlagxT", "maptlagxTcv", "mapkepxT", "mapkepxTcv", "mapvbxT", "mapvbxTcv", "mapvexT", "mapOptimValuexT", "mapfitfailuresxT", "paramestmedianxT", "roimedianfittedxTofts", "paramestwholeroixTofts", "cvwholeroixTofts", "mapKtransT", "mapKtransTcv", "mapkepT", "mapkepTcv", "mapveT", "mapOptimValueT", "mapfitfailuresT", "paramestmedianT", "roimedianfittedTofts", "paramestwholeroiTofts", "proctimetotal", "roiplotparams", "KATversion", "mapAICxT", "mapAICT", "mapAICcompare", "nx", "ny", "nt", "ccfittedxT", "ccfittedT", "p0T", "p0xT", "IRFresults", "mapEF")
 
                 ## ##Use user specified absolute path; "results_file" argument ######
                 if(export.RData==TRUE){
@@ -1674,7 +1735,7 @@ KAT <- function(file="concatenate.KAT.with.KAT.checkData.RData", results_file="m
                 if(export.matlab==TRUE){
                     ## ##Use user specified absolute path; "results_file" argument ######
                     cat("writing results to ",  paste(results_file, ".mat", sep=""), "...", sep="", "\n")
-                    writeMat(paste(results_file, ".mat", sep=""), args=args, mapccslice=map_cc_slice, mapccroi=map_cc_roi, ccmedian=cc.median, maptimes=map.times, aif=aif, aifshifted=aif.shifted, maskroi=mask.roi, mapKtransxT=map.KtransxT, mapKtransxTcv=map.KtransxT.cv, mapkepxT=map.kepxT, mapkepxTcv=map.kepxT.cv, mapvbxT=map.vbxT, mapvbxTcv=map.vbxT.cv, mapvexT=map.vexT, mapOptimValuexT=map.OptimValuexT, mapfitfailuresxT=map.fitfailuresxT, paramestmedianxT=param.est.medianxT, roimedianfittedxTofts=roi.median.fitted.xTofts, paramestwholeroixTofts=param.est.whole.roi.xTofts, cvwholeroixTofts=cv.whole.roi.xTofts, mapKtransT=map.KtransT, mapKtransTcv=map.KtransT.cv, mapkepT=map.kepT, mapkepTcv=map.kepT.cv, mapveT=map.veT, mapOptimValueT=map.OptimValueT, mapfitfailuresT=map.fitfailuresT, paramestmedianT=param.est.medianT, roimedianfittedTofts=roi.median.fitted.Tofts, paramestwholeroiTofts=param.est.whole.roi.Tofts, proctimetotal=proc.time.total, roiplotparams=roiplotparams, KATversion=KAT.version, mapAICxT=map.AIC.xT, mapAICT=map.AIC.T, mapAICcompare=map.AIC.compare, nx=nx, ny=ny, nt=nt, ccfittedxT=cc_fittedxT, ccfittedT=cc_fittedT, p0T=p0.T, p0xT=p0.xT, IRFresults=IRF.results, mapEF=map.EF)
+                    writeMat(paste(results_file, ".mat", sep=""), args=args, mapccslice=map_cc_slice, mapccroi=map_cc_roi, ccmedian=cc.median, maptimes=map.times, aif=aif, aifshifted=aif.shifted, maskroi=mask.roi, mapKtransxT=map.KtransxT, mapKtransxTcv=map.KtransxT.cv, maptlagxT=map.tlagxT, maptlagxTcv=map.tlagxT.cv, mapkepxT=map.kepxT, mapkepxTcv=map.kepxT.cv, mapvbxT=map.vbxT, mapvbxTcv=map.vbxT.cv, mapvexT=map.vexT, mapOptimValuexT=map.OptimValuexT, mapfitfailuresxT=map.fitfailuresxT, paramestmedianxT=param.est.medianxT, roimedianfittedxTofts=roi.median.fitted.xTofts, paramestwholeroixTofts=param.est.whole.roi.xTofts, cvwholeroixTofts=cv.whole.roi.xTofts, mapKtransT=map.KtransT, mapKtransTcv=map.KtransT.cv, mapkepT=map.kepT, mapkepTcv=map.kepT.cv, mapveT=map.veT, mapOptimValueT=map.OptimValueT, mapfitfailuresT=map.fitfailuresT, paramestmedianT=param.est.medianT, roimedianfittedTofts=roi.median.fitted.Tofts, paramestwholeroiTofts=param.est.whole.roi.Tofts, proctimetotal=proc.time.total, roiplotparams=roiplotparams, KATversion=KAT.version, mapAICxT=map.AIC.xT, mapAICT=map.AIC.T, mapAICcompare=map.AIC.compare, nx=nx, ny=ny, nt=nt, ccfittedxT=cc_fittedxT, ccfittedT=cc_fittedT, p0T=p0.T, p0xT=p0.xT, IRFresults=IRF.results, mapEF=map.EF)
                 }
 
                 dcemri.data <- dummy_data

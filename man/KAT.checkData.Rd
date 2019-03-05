@@ -1,5 +1,5 @@
 %%    KATforDCEMRI: a Kinetic Analysis Tool for DCE-MRI
-%%    Copyright 2014 Genentech, Inc.
+%%    Copyright 2019 Genentech, Inc.
 %%
 %%    For questions or comments, please contact
 %%    Gregory Z. Ferl, Ph.D.
@@ -18,7 +18,7 @@ Checks and converts your data to the RData file format.
 Load your data into an R session and save as an RData file that can be analyzed by the KAT function.  Also check that dimensions of vectors and arrays are consistent.
 }
 \usage{
-KAT.checkData(file.name, vector.times, map.CC, mask.ROI, vector.AIF,
+KAT.checkData(file.name, vector.times, map.CC, mask.ROI, vector.AIF, map.tlag=NULL,
 write.data.to.file=TRUE)
 }
 \arguments{
@@ -43,6 +43,12 @@ The nx x ny x ns ROI mask array where voxels within the ROI are assigned a 1 and
 }
   \item{vector.AIF}{
 The nt x 1 arterial (vascular) input function.
+}
+ \item{map.tlag}{
+The nx x ny x ns array that contains per-voxel tag times estimated
+outside of KAT, to be applied
+to the vascular input function. Units must be same as those used for
+vector.times. This argument is optional.
 }
 \item{write.data.to.file}{
   Should the original data, loaded into R, be saved in a single RData
@@ -71,6 +77,23 @@ The \code{KAT} function can also read data stored as an uncompressed MATLAB 5 fi
 }
 \seealso{
 \code{\link{KAT}}, \code{\link{KAT.plot}}, \code{\link{dcemri.data}}
+}
+\examples{
+## Create temporary directory for benchmark example code output files
+temp_dir <- tempdir(check=FALSE)
+##
+current_dir <- getwd()
+setwd(temp_dir)
+##
+## Run example code
+data(dcemri.data, package="KATforDCEMRI")
+a1=dcemri.data$vectorTimes
+a2=dcemri.data$mapCC
+a3=dcemri.data$maskROI
+a4=dcemri.data$vectorAIF
+KAT.checkData("f",vector.times=a1,map.CC=a2,mask.ROI=a3,vector.AIF=a4,write.data.to.file=TRUE)
+##
+setwd(current_dir)
 }
 \keyword{ data }
 \keyword{ check }
