@@ -1,7 +1,7 @@
 Package: KATforDCEMRI
 Type: Package
 Title: Kinetic Analysis and Visualization of DCE-MRI Data
-Version: 1.0
+Version: 1.0.1
 Date: 2019-03-01
 Authors@R: c(person("Gregory Z.", "Ferl", role = c("aut", "cre"),
                      email = "ferl.gregory@gene.com"), person("Georges", "Hankov", role = "aut",
@@ -14,9 +14,9 @@ Copyright: (C) 2019 Genentech, Inc.
 LazyLoad: yes
 LazyData: yes
 NeedsCompilation: no
-Packaged: 2019-03-03 02:21:03 UTC; ferlg
+Packaged: 2019-08-26 07:41:43 UTC; hornik
 Author: Gregory Z. Ferl [aut, cre],
   Georges Hankov [aut]
 Maintainer: Gregory Z. Ferl <ferl.gregory@gene.com>
 Repository: CRAN
-Date/Publication: 2019-03-05 18:30:11 UTC
+Date/Publication: 2019-08-26 07:55:27 UTC

@@ -1,11 +1,11 @@
-67169d45c0a29730f6e98e87b3e763b1 *DESCRIPTION
+f751494be15f4bb171d43ed988808a6b *DESCRIPTION
 0ab51f6fbe6c6a5f38ae6f6fe134eb0c *NAMESPACE
 500ccc64c352070a849af87f8b4002a1 *R/KAT.R
 30434cbd8725dd691afff6de403d7cb7 *R/KAT.checkData.R
 9dc0ba7ce4325887b41bddecb5a892c8 *R/KAT.plot.R
-3ebfeb531f396875cf31d2ec8c72b813 *build/partial.rdb
-dbf4b0ea87d6b73b14ce422cfddff8f6 *data/datalist
-65ffd5b1d9c5ee4b337a98d76113a8ba *data/dcemri.data.RData
+3f016b05893f3b1dd913b392c5f751a4 *build/partial.rdb
+3e878e8014a8f921687c34a2d76c210a *data/datalist
+c3271e02022eda23671558c9f3ebf5c5 *data/dcemri.data.RData
 ddde43ff50fce392e197d5c1a00418dc *demo/00Index
 5a0366ecccb9b9c8392b220832b6140a *demo/KAT.R
 9b00342a8e900cc490212e12c671b07e *man/KAT.Rd
